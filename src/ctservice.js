@@ -3,7 +3,7 @@ const c = require('./constants');
 const ctconn = require('./ctconnection');
 
 const getGroupsPromiseReal = async (groupIds, ap, site, params, page) => {
-  let url = `${site.url}${c.API_SLUG}${ap}?page=${page}&limit=100`;
+  let url = `${site.ct.url}${c.API_SLUG}${ap}?page=${page}&limit=100`;
   if (params) {
     params.forEach((param) => {
       url = `${url}&${param.key}=${param.value}`;
@@ -36,9 +36,9 @@ const getGroupsPaginated = async (groupIds, ap, params, site) => {
   return data;
 };
 
-exports.getPersonsInGroups = async (groupIds, site) => {
+exports.getPersonsInGroups = async (site) => {
   const result = await getGroupsPaginated(
-    groupIds,
+    (site.users && site.users.groupIds) ? site.users.groupIds : null,
     c.GROUPMEMBERS_AP,
     [{ key: 'with_deleted', value: 'false' }],
     site,
@@ -72,6 +72,15 @@ exports.getGroups = async (groupIds, site) => {
   const result = await getGroupsPaginated(groupIds, c.GROUPS_AP, [], site);
   const groups = [];
   result.forEach((el) => {
+    let skip = false;
+    if (site.groups && site.groups.filter) {
+      site.groups.filter.forEach((filter) => {
+        if ((filter.type === el.information.groupTypeId) || (filter.id === el.id)) {
+          skip = true;
+        }
+      });
+    }
+    if (skip) return;
     groups.push({
       id: el.id,
       guid: el.guid,
@@ -104,7 +113,7 @@ const getPersonRecord = (data) => {
 };
 
 exports.getPersonRecordForId = async (id, site) => {
-  const url = `${site.url + c.API_SLUG + c.PERSONS_AP}/${id}`;
+  const url = `${site.ct.url + c.API_SLUG + c.PERSONS_AP}/${id}`;
   const { data } = await ctconn.get(url, site);
   return getPersonRecord(data);
 };
@@ -127,18 +136,17 @@ exports.getPersonsForIds = async (ids, site) => {
 };
 
 exports.authWithChurchTools = (site) => (user, password) => (
-  ctconn.authenticate(site.site.url, user, password)
+  ctconn.authenticate(site.ct.url, user, password)
 );
 
-exports.getChurchToolsData = async (selectionGroupIds, transformGroups, site) => {
+exports.getChurchToolsData = async (site) => {
   let allGroupsIds = [];
 
-  if (selectionGroupIds) {
-    allGroupsIds = selectionGroupIds.map((id) => id);
-  }
-
-  if (transformGroups) {
-    transformGroups.forEach((element) => {
+  if (site.groups && site.groups.transform) {
+    if (site.users && site.users.groupIds) {
+      allGroupsIds = site.users.groupIds.map((id) => id);
+    }
+    site.groups.transform.forEach((element) => {
       if (!allGroupsIds.includes(element.gid)) {
         allGroupsIds.push(element.gid);
       }
@@ -146,7 +154,7 @@ exports.getChurchToolsData = async (selectionGroupIds, transformGroups, site) =>
   }
 
   log.info('Get Persons from ChurchTools');
-  const ctPersonIds = await this.getPersonsInGroups(selectionGroupIds, site);
+  const ctPersonIds = await this.getPersonsInGroups(site);
   log.info('Get Groups from ChurchTools');
   const ctGroups = await this.getGroups(allGroupsIds, site);
   log.info('Get Person Details from ChurchTools');

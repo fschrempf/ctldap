@@ -6,8 +6,8 @@ server:
   key: certs/ldap.key
 sites:
   ccf:
-    site:
-      name: sitename 
+    name: sitename
+    ct:
       user: username # user needs API permissions in ChurchTools
       password: secret1
       url: https://sitename.church.tools/
@@ -28,13 +28,18 @@ sites:
       cn: "admin"
       members: # person ID of users to put in admin group
         - id 
-    selectionGroupIds: # ChurchTools group IDs - only members of these groups will be served by LDAP
-      - gid 
-      - gid
-    transformGroups: # ChurchTools group IDs with the group name which will be served by LDAP
-      - gid: gid
-        name: Groupname
-        objectClass: usrObjClass # additionally set objectClass of user to that value if in group
-      - gid: gid
-        name: Groupname
+    users:
+      groupIds: # ChurchTools group IDs - only members of these groups will be served by LDAP
+        - gid
+        - gid
+    groups: # ChurchTools group IDs with the group name which will be served by LDAP
+      transform:
+        - gid: gid
+          name: Groupname
+          objectClass: usrObjClass # additionally set objectClass of user to that value if in group
+        - gid: gid
+          name: Groupname
+      filter:
+        - type: tid
+        - id: gid
   # further ChurchTools sites to serve - following the same schema as above

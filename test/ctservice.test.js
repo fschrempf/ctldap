@@ -6,13 +6,6 @@ const { expect } = chai;
 const log = require('../src/logging');
 const ctservice = require('../src/ctservice');
 
-const site = {
-  name: 'nopf',
-  user: 'user',
-  pass: 'pass',
-  url: 'https://nopf.localmupf.mupf/',
-};
-
 describe('Church Tools Services', () => {
   before(() => {
     log.logger.level = 'silent';
