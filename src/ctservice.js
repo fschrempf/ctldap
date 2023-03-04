@@ -72,6 +72,15 @@ exports.getGroups = async (groupIds, site) => {
   const result = await getGroupsPaginated(groupIds, c.GROUPS_AP, [], site);
   const groups = [];
   result.forEach((el) => {
+    let skip = false;
+    if (site.groups && site.groups.filter) {
+      site.groups.filter.forEach((filter) => {
+        if ((filter.type === el.information.groupTypeId) || (filter.id === el.id)) {
+          skip = true;
+        }
+      });
+    }
+    if (skip) return;
     groups.push({
       id: el.id,
       guid: el.guid,
