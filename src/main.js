@@ -11,17 +11,13 @@ const initCache = async (site, getChurchToolsDataFunc, authChurchToolsFunc) => {
   const adminuser = transform.getAdmin(site.ldap.admincn, site.ldap.dc);
 
   const siteCacheFunctions = ldapcache.init(
-    site.site.name,
+    site.name,
     transform.getRootObj(site.ldap.dc, site.ldap.admin, site.ldap.o),
     adminuser,
     site.ldap.password,
     authChurchToolsFunc,
   );
-  const churchtoolsdata = await getChurchToolsDataFunc(
-    site.users.groupIds,
-    site.groups.transform,
-    site.site,
-  );
+  const churchtoolsdata = await getChurchToolsDataFunc(site);
   const { users, groups } = transform.getLdapData(
     site,
     churchtoolsdata,
@@ -37,12 +33,8 @@ const updateSiteData = async (
   getChurchToolsDataFunc,
   siteCacheFunctionsSetData,
 ) => {
-  log.infoSite(site.site, 'Updating data from Church Tools');
-  const data = await getChurchToolsDataFunc(
-    site.users.groupIds,
-    site.groups.transform,
-    site.site,
-  );
+  log.infoSite(site, 'Updating data from Church Tools');
+  const data = await getChurchToolsDataFunc(site);
   const adminuser = transform.getAdmin(site.ldap.admincn, site.ldap.dc);
   const ldap = transform.getLdapData(site, data, adminuser);
   siteCacheFunctionsSetData(ldap.users, ldap.groups);
@@ -64,7 +56,7 @@ exports.start = async (
 
   for (const [, value] of Object.entries(config.sites)) {
     const site = value;
-    log.debugSite(site.site, 'Get and transform data from ChurchTools');
+    log.debugSite(site, 'Get and transform data from ChurchTools');
     const cacheFunctions = await initCache(
       site,
       getChurchToolsDataFunc,
@@ -72,7 +64,7 @@ exports.start = async (
     );
     await this.ldap.initSite(site, cacheFunctions);
     updaters.set(
-      site.site.name,
+      site.name,
       () => updateSiteData(site, getChurchToolsDataFunc, cacheFunctions.setData),
     );
   }
@@ -95,11 +87,7 @@ exports.update = async (updaters) => {
 };
 
 exports.snapshot = async (site) => {
-  const data = await ctservice.getChurchToolsData(
-    site.users.groupIds,
-    site.groups.transform,
-    site.site,
-  );
+  const data = await ctservice.getChurchToolsData(site);
   const adminuser = transform.getAdmin(site.ldap.admincn, site.ldap.dc);
   const ldap = transform.getLdapData(site, data, adminuser);
   return {

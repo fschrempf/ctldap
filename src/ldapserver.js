@@ -18,7 +18,7 @@ const startUp = (server, cb) => {
 };
 
 const initSite = (site, cacheFunctions) => {
-  const sitename = site.site.name;
+  const sitename = site.name;
   const { dc } = site.ldap;
 
   function authorize(req, _res, next) {

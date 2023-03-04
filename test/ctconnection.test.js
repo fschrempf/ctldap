@@ -14,9 +14,11 @@ ChurchToolsFatalError = ctapi.ChurchToolsFatalError;
 
 const site = {
   name: 'nopf',
-  user: 'user',
-  password: 'pass',
-  url: 'https://nopf.church.toys/',
+  ct: {
+    user: 'user',
+    password: 'pass',
+    url: 'https://nopf.church.toys/',
+  },
 };
 
 describe('Church Tools Connection', () => {
@@ -80,7 +82,6 @@ describe('Church Tools Connection', () => {
 
   it('get - logs in, if no session', async () => {
     const expected = { data: { status: 'success', data: { test: 'test' } } };
-    const site = ctconn.getEmptyConnection('amprf', 'url');
     let loginCalled = false;
     ctconn.setLoginMock((c, b, u, p) => {
       loginCalled = true;

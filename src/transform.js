@@ -293,22 +293,30 @@ exports.getLdapUsers = (ctpersons, attributes, dc) => {
 };
 
 exports.getLdapData = (site, churchtoolsdata, adminuser) => {
+  let transformGroups = null;
+
+  if (site.groups && site.groups.transform) {
+    transformGroups = site.groups.transform;
+  }
+
   const groups = this.getLdapGroupsWithoutMembers(
     churchtoolsdata.groups,
-    site.groups.transform,
+    transformGroups,
     site.roles,
     site.ldap.dc,
   );
+
   const users = this.getLdapUsers(
     churchtoolsdata.persons,
     site.attributes,
     site.ldap.dc,
   );
+
   this.connectUsersAndGroups(
     churchtoolsdata.memberships,
     groups,
     users,
-    site.groups.transform,
+    transformGroups,
   );
 
   groups.push(

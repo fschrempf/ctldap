@@ -20,7 +20,7 @@ exports.getEmptyConnection = (sitename, baseurl) => {
 
 exports.getConnection = (site) => {
   if (!Object.prototype.hasOwnProperty.call(connectionPool, site.name)) {
-    connectionPool[site.name] = this.getEmptyConnection(site.name, site.url);
+    connectionPool[site.name] = this.getEmptyConnection(site.name, site.ct.url);
   }
   return connectionPool[site.name];
 };
@@ -108,7 +108,7 @@ exports.login = async (site) => {
 
   let result = {};
   try {
-    conn.loginPromise = loginPromise(conn, site.user, site.password);
+    conn.loginPromise = loginPromise(conn, site.ct.user, site.ct.password);
     result = await conn.loginPromise;
   } catch (err) {
     result = err.response;
