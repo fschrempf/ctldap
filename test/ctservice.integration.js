@@ -11,7 +11,7 @@ describe('CT API calls from service', () => {
     log.logger.level = 'silent';
   });
   it('Selection Group returns the group info and personIds', async () => {
-    const personIds = await ctserv.getPersonsInGroups(site.selectionGroupIds, site.site);
+    const personIds = await ctserv.getPersonsInGroups(site.users.groupIds, site.site);
     expect(personIds.length).to.be.above(15);
     expect(personIds).to.contain(3);
     expect(personIds).to.contain(3041);
@@ -23,8 +23,8 @@ describe('CT API calls from service', () => {
   });
   it('getChurchToolsData - returns all the data', async () => {
     const data = await ctserv.getChurchToolsData(
-      site.selectionGroupIds,
-      site.transformGroups.map((v) => v.gid),
+      site.users.groupIds,
+      site.groups.transform.map((v) => v.gid),
       site.site,
     );
     expect(data.groups.map((r) => r.id)).to.contain(692);

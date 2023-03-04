@@ -295,7 +295,7 @@ exports.getLdapUsers = (ctpersons, attributes, dc) => {
 exports.getLdapData = (site, churchtoolsdata, adminuser) => {
   const groups = this.getLdapGroupsWithoutMembers(
     churchtoolsdata.groups,
-    site.transformGroups,
+    site.groups.transform,
     site.roles,
     site.ldap.dc,
   );
@@ -308,7 +308,7 @@ exports.getLdapData = (site, churchtoolsdata, adminuser) => {
     churchtoolsdata.memberships,
     groups,
     users,
-    site.transformGroups,
+    site.groups.transform,
   );
 
   groups.push(
