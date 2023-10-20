@@ -53,7 +53,7 @@ exports.getPersonsInGroups = async (site) => {
 exports.getGroupMemberships = async (groupIds, site) => {
   const members = [];
 
-  if (groupIds != null || groupIds.length) {
+  if (groupIds == null || !groupIds.length) {
     const result = await getGroupsPaginated(
       null,
       c.GROUPMEMBERS_AP,
