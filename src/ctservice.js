@@ -51,18 +51,38 @@ exports.getPersonsInGroups = async (site) => {
 };
 
 exports.getGroupMemberships = async (groupIds, site) => {
-  const result = await getGroupsPaginated(
-    groupIds,
-    c.GROUPMEMBERS_AP,
-    [{ key: 'with_deleted', value: 'false' }],
-    site,
-  );
   const members = [];
-  result.forEach((el) => {
-    members.push({
-      personId: el.personId,
-      groupId: el.groupId,
-      groupTypeRoleId: el.groupTypeRoleId,
+
+  if (groupIds != null || groupIds.length) {
+    const result = await getGroupsPaginated(
+      null,
+      c.GROUPMEMBERS_AP,
+      [{ key: 'with_deleted', value: 'false' }],
+      site,
+    );
+    result.forEach((el) => {
+      members.push({
+        personId: el.personId,
+        groupId: el.groupId,
+        groupTypeRoleId: el.groupTypeRoleId,
+      });
+    });
+    return members;
+  }
+
+  groupIds.forEach(async (groupId) => {
+    const result = await getGroupsPaginated(
+      groupIds,
+      `${c.GROUPS_AP}/${groupId}/members`,
+      [{ key: 'with_deleted', value: 'false' }],
+      site,
+    );
+    result.forEach((el) => {
+      members.push({
+        personId: el.personId,
+        groupId: el.groupId,
+        groupTypeRoleId: el.groupTypeRoleId,
+      });
     });
   });
   return members;
@@ -168,7 +188,8 @@ exports.getChurchToolsData = async (site) => {
   log.info('Get Person Details from ChurchTools');
   const ctPersons = await this.getPersons(ctPersonIds, site);
   log.info('Get Group Memberships from ChurchTools');
-  const ctGroupMembership = await this.getGroupMemberships(allGroupsIds, site);
+  const groupIds = ctGroups.map((group) => group.id);
+  const ctGroupMembership = await this.getGroupMemberships(groupIds, site);
 
   return {
     groups: ctGroups,
