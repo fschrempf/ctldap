@@ -80,7 +80,7 @@ exports.getGroupMemberships = async (groupIds, site) => {
     result.forEach((el) => {
       members.push({
         personId: el.personId,
-        groupId: el.groupId,
+        groupId,
         groupTypeRoleId: el.groupTypeRoleId,
       });
     });
