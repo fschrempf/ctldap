@@ -54,7 +54,9 @@ const initSite = (site, cacheFunctions) => {
 
   function authorize(req, _res, next) {
     const adminDn = cacheFunctions.getGlobals().adminDn.dn;
-    if (!req.connection.ldap.bindDN.equals(adminDn)) {
+    let searchAllowed = false;
+    if (site.users && site.users.searchAllowed) searchAllowed = true;
+    if (!searchAllowed && !req.connection.ldap.bindDN.equals(adminDn)) {
       log.warnSite(sitename, 'Rejected search without proper binding!');
       return next(new ldap.InsufficientAccessRightsError());
     }
