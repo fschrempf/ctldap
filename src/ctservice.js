@@ -178,18 +178,17 @@ exports.getChurchToolsData = async (site) => {
     });
   }
 
-  if (allGroupsIds) {
-    log.info('Get Person IDs of Group Members from ChurchTools');
-    ctPersonIds = await this.getPersonsInGroups(site);
-  }
-
   log.info('Get Groups from ChurchTools');
   const ctGroups = await this.getGroups(allGroupsIds, site);
-  log.info('Get Person Details from ChurchTools');
-  const ctPersons = await this.getPersons(ctPersonIds, site);
   log.info('Get Group Memberships from ChurchTools');
-  const groupIds = ctGroups.map((group) => group.id);
-  const ctGroupMembership = await this.getGroupMemberships(groupIds, site);
+  const ctGroupIds = ctGroups.map((group) => group.id);
+  const ctGroupMembership = await this.getGroupMemberships(ctGroupIds, site);
+  log.info('Get Person Details from ChurchTools');
+  if (allGroupsIds != null) {
+    ctPersonIds = ctGroupMembership.map((member) => member.id);
+    ctPersonIds = Array.from(new Set(ctPersonIds));
+  }
+  const ctPersons = await this.getPersons(ctPersonIds, site);
 
   return {
     groups: ctGroups,
