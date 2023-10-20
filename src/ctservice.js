@@ -118,13 +118,17 @@ exports.getPersonRecordForId = async (id, site) => {
   return getPersonRecord(data);
 };
 
-exports.getPersonsForIds = async (ids, site) => {
+exports.getPersons = async (ids, site) => {
   const persons = [];
-  const clonedIds = [...ids];
-  const chunkedIds = [];
-  const chunkSize = clonedIds.length / 10;
-  for (let i = 0; i < chunkSize; i += 1) {
-    chunkedIds.push(clonedIds.splice(0, 10));
+  let chunkedIds = [null];
+
+  if (ids) {
+    const clonedIds = [...ids];
+    const chunkSize = clonedIds.length / 10;
+    chunkedIds = [];
+    for (let i = 0; i < chunkSize; i += 1) {
+      chunkedIds.push(clonedIds.splice(0, 10));
+    }
   }
   for await (const idarray of chunkedIds) {
     const result = await getGroupsPaginated(idarray, c.PERSONS_AP, [], site);
@@ -140,7 +144,8 @@ exports.authWithChurchTools = (site) => (user, password) => (
 );
 
 exports.getChurchToolsData = async (site) => {
-  let allGroupsIds = [];
+  let allGroupsIds = null;
+  let ctPersonIds = null;
 
   if (site.groups && site.groups.transform) {
     if (site.users && site.users.groupIds) {
@@ -153,12 +158,15 @@ exports.getChurchToolsData = async (site) => {
     });
   }
 
-  log.info('Get Persons from ChurchTools');
-  const ctPersonIds = await this.getPersonsInGroups(site);
+  if (allGroupsIds) {
+    log.info('Get Person IDs of Group Members from ChurchTools');
+    ctPersonIds = await this.getPersonsInGroups(site);
+  }
+
   log.info('Get Groups from ChurchTools');
   const ctGroups = await this.getGroups(allGroupsIds, site);
   log.info('Get Person Details from ChurchTools');
-  const ctPersons = await this.getPersonsForIds(ctPersonIds, site);
+  const ctPersons = await this.getPersons(ctPersonIds, site);
   log.info('Get Group Memberships from ChurchTools');
   const ctGroupMembership = await this.getGroupMemberships(allGroupsIds, site);
 

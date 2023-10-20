@@ -1,12 +1,43 @@
 const ldap = require('ldapjs');
 const { parseDN } = require('ldapjs');
 const fs = require('fs');
+const helpers = require('ldap-filter/lib/helpers');
+
 const c = require('./constants');
 const log = require('./logging');
 
 log.loglevel = log.loglevels.debug;
 
 let ldapjs = {};
+
+function escapeRegExp(str) {
+  /* JSSTYLED */
+  return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&');
+}
+
+/*
+ * Override the matcher to be case-insensitive as this is what we need when
+ * doing searches for users or groups. This solution is based on the code from:
+ * https://github.com/ldapjs/node-ldapjs/issues/156#issuecomment-224766253.
+ */
+ldap.SubstringFilter.prototype.matches = function match(target, strictAttrCase) {
+  const tv = helpers.getAttrValue(target, this.attribute, strictAttrCase);
+  let matcher;
+  let re = '';
+
+  if (tv !== undefined && tv !== null) {
+    if (this.initial) re += `^${escapeRegExp(this.initial)}.*`;
+    this.any.forEach((s) => {
+      re += `${escapeRegExp(s)}.*`;
+    });
+    if (this.final) re += `${escapeRegExp(this.final)}$`;
+
+    matcher = new RegExp(re, 'i');
+    return helpers.testValues((v) => matcher.test(v), tv);
+  }
+
+  return false;
+};
 
 const stopServer = () => {
   ldapjs.close();
@@ -23,7 +54,9 @@ const initSite = (site, cacheFunctions) => {
 
   function authorize(req, _res, next) {
     const adminDn = cacheFunctions.getGlobals().adminDn.dn;
-    if (!req.connection.ldap.bindDN.equals(adminDn)) {
+    let searchAllowed = false;
+    if (site.users && site.users.searchAllowed) searchAllowed = true;
+    if (!searchAllowed && !req.connection.ldap.bindDN.equals(adminDn)) {
       log.warnSite(sitename, 'Rejected search without proper binding!');
       return next(new ldap.InsufficientAccessRightsError());
     }
