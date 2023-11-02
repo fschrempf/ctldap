@@ -53,39 +53,42 @@ exports.getPersonsInGroups = async (site) => {
 exports.getGroupMemberships = async (groupIds, site) => {
   const members = [];
 
-  if (groupIds == null || !groupIds.length) {
-    const result = await getGroupsPaginated(
-      null,
-      c.GROUPMEMBERS_AP,
-      [{ key: 'with_deleted', value: 'false' }],
-      site,
-    );
-    result.forEach((el) => {
-      members.push({
-        personId: el.personId,
-        groupId: el.groupId,
-        groupTypeRoleId: el.groupTypeRoleId,
-      });
-    });
-    return members;
-  }
-
-  groupIds.forEach(async (groupId) => {
-    const result = await getGroupsPaginated(
-      groupIds,
-      `${c.GROUPS_AP}/${groupId}/members`,
-      [{ key: 'with_deleted', value: 'false' }],
-      site,
-    );
-    result.forEach((el) => {
-      members.push({
-        personId: el.personId,
-        groupId,
-        groupTypeRoleId: el.groupTypeRoleId,
-      });
+  const result = await getGroupsPaginated(
+    groupIds,
+    c.GROUPMEMBERS_AP,
+    [{ key: 'with_deleted', value: 'false' }],
+    site,
+  );
+  result.forEach((el) => {
+    members.push({
+      personId: el.personId,
+      groupId: el.groupId,
+      groupTypeRoleId: el.groupTypeRoleId,
     });
   });
   return members;
+
+  /*
+   * This would avoid the global group member endpoint and allows to run with
+   * limited privileges, but causes too high API load as we need one additional
+   * request per group.
+   */
+  // groupIds.forEach(async (groupId) => {
+  //   const result = await getGroupsPaginated(
+  //     null,
+  //     `${c.GROUPS_AP}/${groupId}/members`,
+  //     [{ key: 'with_deleted', value: 'false' }],
+  //     site,
+  //   );
+  //   result.forEach((el) => {
+  //     members.push({
+  //       personId: el.personId,
+  //       groupId,
+  //       groupTypeRoleId: el.groupTypeRoleId,
+  //     });
+  //   });
+  // });
+  // return members;
 };
 
 exports.getGroups = async (groupIds, site) => {
@@ -153,6 +156,11 @@ exports.getPersons = async (ids, site) => {
   for await (const idarray of chunkedIds) {
     const result = await getGroupsPaginated(idarray, c.PERSONS_AP, [], site);
     result.forEach((person) => {
+      if (site.departments) {
+        const deps = new Set(person.departmentIds);
+        // check if department IDs of person intersect with IDs from site config
+        if (![...new Set(site.departments)].some((x) => deps.has(x))) return;
+      }
       persons.push(getPersonRecord(person));
     });
   }
@@ -181,8 +189,7 @@ exports.getChurchToolsData = async (site) => {
   log.info('Get Groups from ChurchTools');
   const ctGroups = await this.getGroups(allGroupsIds, site);
   log.info('Get Group Memberships from ChurchTools');
-  const ctGroupIds = ctGroups.map((group) => group.id);
-  const ctGroupMembership = await this.getGroupMemberships(ctGroupIds, site);
+  const ctGroupMembership = await this.getGroupMemberships(allGroupsIds, site);
   log.info('Get Person Details from ChurchTools');
   if (allGroupsIds != null) {
     ctPersonIds = ctGroupMembership.map((member) => member.id);
