@@ -1,4 +1,5 @@
 const axiosReal = require('axios').default;
+const cookie = require('cookie');
 const log = require('./logging');
 const c = require('./constants');
 const ctapi = require('./ctapi');
@@ -44,12 +45,12 @@ exports.infoReal = async (baseurl) => {
   return ctapi.request(request);
 };
 
-exports.getCsrfTokenReal = async (baseurl, cookie) => {
+exports.getCsrfTokenReal = async (baseurl, ck) => {
   const request = {
     method: 'get',
     url: baseurl + c.API_SLUG + c.CSRF_AP,
     headers: {
-      Cookie: cookie,
+      Cookie: ck,
     },
     json: true,
   };
@@ -59,6 +60,14 @@ exports.getCsrfTokenReal = async (baseurl, cookie) => {
 let getCsrfToken = this.getCsrfTokenReal;
 
 const getCookie = (result) => result.headers['set-cookie'][0];
+
+const cookieIsValid = (ck) => {
+  const parsed = cookie.parse(ck);
+  const expires = Date.parse(parsed.expires);
+  if (expires > Date.now()) return true;
+  log.info('Cookie expired');
+  return false;
+};
 
 const getLoginRequest = (baseurl, user, password) => ({
   method: 'post',
@@ -129,7 +138,7 @@ exports.getPromiseReal = async (url, site) => {
   while (retryWithAuth) {
     retryWithAuth = false;
     try {
-      if (!this.isConnected(site.name)) {
+      if (!this.isConnected(site.name) || !cookieIsValid(conn.cookie)) {
         log.debug('Try again to log in');
         await this.login(site);
       }
