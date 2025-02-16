@@ -67,28 +67,6 @@ exports.getGroupMemberships = async (groupIds, site) => {
     });
   });
   return members;
-
-  /*
-   * This would avoid the global group member endpoint and allows to run with
-   * limited privileges, but causes too high API load as we need one additional
-   * request per group.
-   */
-  // groupIds.forEach(async (groupId) => {
-  //   const result = await getGroupsPaginated(
-  //     null,
-  //     `${c.GROUPS_AP}/${groupId}/members`,
-  //     [{ key: 'with_deleted', value: 'false' }],
-  //     site,
-  //   );
-  //   result.forEach((el) => {
-  //     members.push({
-  //       personId: el.personId,
-  //       groupId,
-  //       groupTypeRoleId: el.groupTypeRoleId,
-  //     });
-  //   });
-  // });
-  // return members;
 };
 
 exports.getGroups = async (groupIds, site) => {
