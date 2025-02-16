@@ -172,27 +172,20 @@ exports.authWithChurchTools = (site) => (user, password) => (
 );
 
 exports.getChurchToolsData = async (site) => {
-  let allGroupsIds = null;
+  let userGroupsIds = null;
   let ctPersonIds = null;
 
-  if (site.groups && site.groups.transform) {
-    if (site.users && site.users.groupIds) {
-      allGroupsIds = site.users.groupIds.map((id) => id);
-    }
-    site.groups.transform.forEach((element) => {
-      if (!allGroupsIds.includes(element.gid)) {
-        allGroupsIds.push(element.gid);
-      }
-    });
+  if (site.users && site.users.groupIds) {
+    userGroupsIds = site.users.groupIds;
   }
 
   log.info('Get Groups from ChurchTools');
-  const ctGroups = await this.getGroups(allGroupsIds, site);
+  const ctGroups = await this.getGroups(null, site);
   log.info('Get Group Memberships from ChurchTools');
-  const ctGroupMembership = await this.getGroupMemberships(allGroupsIds, site);
+  const ctGroupMembership = await this.getGroupMemberships(null, site);
   log.info('Get Person Details from ChurchTools');
-  if (allGroupsIds != null) {
-    ctPersonIds = ctGroupMembership.map((member) => member.id);
+  if (userGroupsIds != null) {
+    ctPersonIds = ctGroupMembership.map((member) => member.personId);
     ctPersonIds = Array.from(new Set(ctPersonIds));
   }
   const ctPersons = await this.getPersons(ctPersonIds, site);
