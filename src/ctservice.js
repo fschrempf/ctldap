@@ -67,34 +67,13 @@ exports.getGroupMemberships = async (groupIds, site) => {
     });
   });
   return members;
-
-  /*
-   * This would avoid the global group member endpoint and allows to run with
-   * limited privileges, but causes too high API load as we need one additional
-   * request per group.
-   */
-  // groupIds.forEach(async (groupId) => {
-  //   const result = await getGroupsPaginated(
-  //     null,
-  //     `${c.GROUPS_AP}/${groupId}/members`,
-  //     [{ key: 'with_deleted', value: 'false' }],
-  //     site,
-  //   );
-  //   result.forEach((el) => {
-  //     members.push({
-  //       personId: el.personId,
-  //       groupId,
-  //       groupTypeRoleId: el.groupTypeRoleId,
-  //     });
-  //   });
-  // });
-  // return members;
 };
 
 exports.getGroups = async (groupIds, site) => {
   const result = await getGroupsPaginated(groupIds, c.GROUPS_AP, [], site);
   const groups = [];
   result.forEach((el) => {
+    if (el.settings && el.settings.visibility === 'hidden') return;
     let skip = false;
     if (site.groups && site.groups.filter) {
       site.groups.filter.forEach((filter) => {
@@ -172,27 +151,20 @@ exports.authWithChurchTools = (site) => (user, password) => (
 );
 
 exports.getChurchToolsData = async (site) => {
-  let allGroupsIds = null;
+  let userGroupsIds = null;
   let ctPersonIds = null;
 
-  if (site.groups && site.groups.transform) {
-    if (site.users && site.users.groupIds) {
-      allGroupsIds = site.users.groupIds.map((id) => id);
-    }
-    site.groups.transform.forEach((element) => {
-      if (!allGroupsIds.includes(element.gid)) {
-        allGroupsIds.push(element.gid);
-      }
-    });
+  if (site.users && site.users.groupIds) {
+    userGroupsIds = site.users.groupIds;
   }
 
   log.info('Get Groups from ChurchTools');
-  const ctGroups = await this.getGroups(allGroupsIds, site);
+  const ctGroups = await this.getGroups(null, site);
   log.info('Get Group Memberships from ChurchTools');
-  const ctGroupMembership = await this.getGroupMemberships(allGroupsIds, site);
+  const ctGroupMembership = await this.getGroupMemberships(null, site);
   log.info('Get Person Details from ChurchTools');
-  if (allGroupsIds != null) {
-    ctPersonIds = ctGroupMembership.map((member) => member.id);
+  if (userGroupsIds != null) {
+    ctPersonIds = ctGroupMembership.map((member) => member.personId);
     ctPersonIds = Array.from(new Set(ctPersonIds));
   }
   const ctPersons = await this.getPersons(ctPersonIds, site);

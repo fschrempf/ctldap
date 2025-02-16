@@ -1,5 +1,6 @@
 const ldapEsc = require('ldap-escape');
 const crypto = require('crypto');
+const log = require('./logging');
 const c = require('./constants');
 
 class DataFormatError extends Error {
@@ -304,7 +305,7 @@ exports.getLdapData = (site, churchtoolsdata, adminuser) => {
     transformGroups = site.groups.transform;
   }
 
-  const groups = this.getLdapGroupsWithoutMembers(
+  let groups = this.getLdapGroupsWithoutMembers(
     churchtoolsdata.groups,
     transformGroups,
     site.roles,
@@ -323,6 +324,11 @@ exports.getLdapData = (site, churchtoolsdata, adminuser) => {
     users,
     transformGroups,
   );
+
+  if (site.ldap.skip_empty_groups) {
+    log.info('Skipping export of empty LDAP groups');
+    groups = groups.filter((group) => (group.attributes.uniqueMember.length > 0));
+  }
 
   groups.push(
     this.addUsersAdminGroup(
