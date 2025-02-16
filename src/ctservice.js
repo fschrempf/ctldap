@@ -95,6 +95,7 @@ exports.getGroups = async (groupIds, site) => {
   const result = await getGroupsPaginated(groupIds, c.GROUPS_AP, [], site);
   const groups = [];
   result.forEach((el) => {
+    if (el.settings && el.settings.visibility === 'hidden') return;
     let skip = false;
     if (site.groups && site.groups.filter) {
       site.groups.filter.forEach((filter) => {
