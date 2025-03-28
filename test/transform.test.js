@@ -88,7 +88,10 @@ describe('Transform API results to Ldap', () => {
       email: 'peter.pan@pan-demi.org',
       ncuid: 'peter.pan',
     };
-    const actual = transform.transformUser(person, [], 'site');
+    const actual = transform.transformUser(person, {
+      ldap: { dc: 'site', userid_lowercase: false },
+      attributes: [],
+    });
     expect(actual.dn).to.startsWith('cn=peter.pan');
     expect(actual.attributes.cn).to.be.equal('peter.pan');
     expect(actual.attributes.uid).to.be.equal('peter.pan');
