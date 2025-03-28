@@ -131,12 +131,15 @@ exports.addConfigAttributes = (ctperson, attributes) => {
   });
 };
 
-exports.transformUser = (ctpserson, attributes, dc) => {
+exports.transformUser = (ctpserson, site) => {
   let result = {};
   if (!ctpserson || !ctpserson.id) throw new DataFormatError('Empty user object');
 
-  const cn = this.setUid(ctpserson);
-  const dn = `${ldapEsc.dn`cn=${cn}`},ou=${c.LDAP_OU_USERS},${dc}`;
+  let cn = this.setUid(ctpserson);
+  if (site.ldap.userid_lowercase) {
+    cn = this.lowercase(cn);
+  }
+  const dn = `${ldapEsc.dn`cn=${cn}`},ou=${c.LDAP_OU_USERS},${site.ldap.dc}`;
   result = {
     dn: this.lowercase(dn),
     attributes: {
@@ -159,7 +162,7 @@ exports.transformUser = (ctpserson, attributes, dc) => {
       memberOf: [],
     },
   };
-  this.addConfigAttributes(result, attributes);
+  this.addConfigAttributes(result, site.attributes);
   return result;
 };
 
@@ -289,10 +292,10 @@ exports.getLdapGroupsWithoutMembers = (ctgroups, transformGroups, roles, dc) => 
   return groups;
 };
 
-exports.getLdapUsers = (ctpersons, attributes, dc) => {
+exports.getLdapUsers = (ctpersons, site) => {
   const users = [];
   ctpersons.forEach((element) => {
-    const user = this.transformUser(element, attributes, dc);
+    const user = this.transformUser(element, site);
     users.push(user);
   });
   return users;
@@ -314,8 +317,7 @@ exports.getLdapData = (site, churchtoolsdata, adminuser) => {
 
   const users = this.getLdapUsers(
     churchtoolsdata.persons,
-    site.attributes,
-    site.ldap.dc,
+    site,
   );
 
   this.connectUsersAndGroups(
