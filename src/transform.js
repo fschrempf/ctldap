@@ -269,11 +269,6 @@ exports.getLdapGroupsWithoutMembers = (ctgroups, transformGroups, roles, dc) => 
     groups.push(grp);
 
     if (roles && roles.export && element.roles) {
-      const roleCount = element.roles.filter((r) => r.isActive).length;
-      if (roleCount <= 1) {
-        // do not export role if there is only one active role
-        return;
-      }
       element.roles.forEach((role) => {
         if (!role.isActive) return;
         let skip = false;
